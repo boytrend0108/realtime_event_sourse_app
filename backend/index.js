@@ -22,8 +22,14 @@ app.get('/messages', (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('Cache', 'no-store');
 
-  emitter.on('message', (message) => {
+  const cb = (message) => {
     res.write(`data:${message}\n\n`);
+  };
+
+  emitter.on('message', cb);
+
+  res.on('close', () => {
+    emitter.off('message', cb);
   });
 });
 
