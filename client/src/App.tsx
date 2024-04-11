@@ -15,20 +15,8 @@ function App() {
       .post<ServerResponse, AxiosResponse<ServerResponse>>(
         'http://localhost:3000/messages',
         { message })
-      .then(res => {
-        setMessages(res.data);
-        setMessage('');
-      })
+      .then(() => setMessage(''))
       .catch(err => console.log(err));
-  }
-
-  const getAll = () => {
-    axios.get('http://localhost:3000/messages')
-      .then(res => {
-        setMessages(res.data);
-        getAll();
-      })
-      .catch(err => console.log(err))
   }
 
   const handleKeyPress = (event: React.KeyboardEvent) => {
@@ -39,7 +27,23 @@ function App() {
   }
 
   useEffect(() => {
-    getAll();
+    const evtSource = new EventSource("http://localhost:3000/messages");
+
+    evtSource.onerror = () => {
+      console.log('Error: connection failed');
+    }
+
+    evtSource.onopen = () => {
+      console.log('Connect to server');
+    }
+
+    evtSource.onmessage = (e) => {
+      setMessages(messages => [e.data, ...messages]);
+    }
+
+    return () => {
+      evtSource.close();
+    }
   }, [])
 
   return (
